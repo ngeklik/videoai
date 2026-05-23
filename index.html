@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium AI Video Prompt Generator</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                        mono: ['Courier New', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe', 
+                            500: '#8b5cf6', 600: '#7c3aed', 900: '#4c1d95',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar for Textarea */
+        textarea::-webkit-scrollbar { width: 8px; }
+        textarea::-webkit-scrollbar-track { background: #1f2937; border-radius: 8px; }
+        textarea::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 8px; }
+        textarea::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="font-sans antialiased text-gray-800 bg-gray-50 overflow-hidden" id="main-body">
+
+    <!-- === NAVBAR === -->
+    <nav class="fixed w-full bg-white/90 backdrop-blur-md z-40 shadow-sm border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-brand-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                    <span class="font-bold text-xl text-gray-900 tracking-tight">Prompt<span class="text-brand-600">Master</span></span>
+                </div>
+                
+                <!-- Info User -->
+                <div id="user-info" class="hidden flex items-center gap-4">
+                    <div class="text-right hidden md:block">
+                        <p class="text-sm font-bold text-gray-800" id="nav-nama-user">Nama User</p>
+                        <p class="text-xs text-emerald-600 font-semibold" id="nav-expired">Aktif s/d: -</p>
+                    </div>
+                    <button onclick="logout()" class="bg-red-50 text-red-600 hover:bg-red-100 hover:shadow-md px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300">
+                        <i class="fa-solid fa-right-from-bracket mr-1"></i> Keluar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- === MODALS OVERLAY (LOGIN / REGISTER / RENEW) === -->
+    <div id="auth-modal" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        
+        <!-- LOGIN FORM -->
+        <div id="form-login" class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md transform transition-all border border-gray-100">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner"><i class="fa-solid fa-lock"></i></div>
+                <h2 class="text-2xl font-bold text-gray-900">Akses Premium</h2>
+                <p class="text-sm text-gray-500 mt-1">Silakan login untuk menggunakan generator.</p>
+            </div>
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Username</label>
+                    <input type="text" id="login-username" class="w-full px-5 py-3.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-500 outline-none transition-all bg-gray-50 focus:bg-white" placeholder="Masukkan username Anda">
+                </div>
+                <button onclick="handleLogin()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-brand-500/30 transition-all hover:-translate-y-0.5" id="btn-login">
+                    Masuk Sekarang
+                </button>
+            </div>
+            <p class="text-center mt-8 text-sm text-gray-600">Belum punya akses? <a href="#" onclick="switchModal('form-register')" class="text-brand-600 font-bold hover:underline">Daftar di sini</a></p>
+        </div>
+
+        <!-- REGISTER FORM -->
+        <div id="form-register" class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md hidden transform transition-all max-h-[90vh] overflow-y-auto border border-gray-100">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner"><i class="fa-solid fa-user-plus"></i></div>
+                <h2 class="text-2xl font-bold text-gray-900">Pendaftaran Akses</h2>
+                <p class="text-sm text-gray-500 mt-1">Lengkapi data untuk membeli akses premium.</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Lengkap</label>
+                    <input type="text" id="reg-nama" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-500 outline-none bg-gray-50 focus:bg-white transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Username (Untuk Login)</label>
+                    <input type="text" id="reg-username" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-500 outline-none bg-gray-50 focus:bg-white transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">No. WhatsApp</label>
+                    <input type="number" id="reg-wa" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-500 outline-none bg-gray-50 focus:bg-white transition-all" placeholder="0812...">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Pilih Durasi & Harga</label>
+                    <select id="reg-paket" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-500 outline-none bg-gray-50 focus:bg-white transition-all cursor-pointer">
+                        <option value="1 Hari">1 Hari - Rp 5.000</option>
+                        <option value="7 Hari">7 Hari - Rp 25.000</option>
+                        <option value="14 Hari">14 Hari - Rp 45.000</option>
+                        <option value="30 Hari">30 Hari - Rp 80.000</option>
+                    </select>
+                </div>
+                <button onclick="handleRegister()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-500/30 transition-all hover:-translate-y-0.5 mt-2" id="btn-register">
+                    Lanjut ke Pembayaran
+                </button>
+            </div>
+            <p class="text-center mt-6 text-sm text-gray-600">Sudah punya akun? <a href="#" onclick="switchModal('form-login')" class="text-brand-600 font-bold hover:underline">Login di sini</a></p>
+        </div>
+
+        <!-- RENEW FORM (Perpanjang Akses) -->
+        <div id="form-renew" class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md hidden transform transition-all border border-gray-100">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                <h2 class="text-2xl font-bold text-gray-900">Akses Berakhir</h2>
+                <p class="text-sm text-gray-500 mt-1">Masa aktif Anda sudah habis. Silakan perpanjang untuk melanjutkan.</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Username</label>
+                    <input type="text" id="renew-username" readonly class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 outline-none font-mono">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Pilih Durasi Perpanjangan</label>
+                    <select id="renew-paket" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-500 outline-none bg-gray-50 focus:bg-white transition-all cursor-pointer">
+                        <option value="1 Hari">1 Hari - Rp 5.000</option>
+                        <option value="7 Hari">7 Hari - Rp 25.000</option>
+                        <option value="14 Hari">14 Hari - Rp 45.000</option>
+                        <option value="30 Hari">30 Hari - Rp 80.000</option>
+                    </select>
+                </div>
+                <button onclick="handleRenew()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-brand-500/30 transition-all hover:-translate-y-0.5 mt-2" id="btn-renew">
+                    Perpanjang Sekarang
+                </button>
+                <button onclick="logout()" class="w-full bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold py-3 px-4 rounded-xl transition-all border border-gray-200">Bukan Anda? Ganti Akun</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- === NOTIFICATION PENDING PAYMENT === -->
+    <div id="pending-notice" class="fixed inset-0 bg-gray-50 z-50 flex flex-col items-center justify-center p-4 hidden">
+        <div class="w-24 h-24 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-4xl mb-6 shadow-inner animate-pulse"><i class="fa-solid fa-hourglass-half"></i></div>
+        <h2 class="text-3xl font-bold mb-3 text-gray-900">Menunggu Konfirmasi</h2>
+        <p class="text-gray-600 text-center max-w-md mb-8 text-lg">Akun Anda sedang ditinjau. Jika Anda sudah transfer namun belum konfirmasi, silakan klik tombol di bawah.</p>
+        
+        <div class="flex flex-col gap-3 w-full max-w-xs">
+            <button onclick="showPaymentSection()" class="bg-brand-600 hover:bg-brand-700 text-white px-6 py-3.5 rounded-xl font-bold shadow-lg shadow-brand-500/30 transition-all hover:-translate-y-0.5">Buka Halaman Pembayaran</button>
+            <button onclick="checkStatus()" class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-6 py-3.5 rounded-xl font-bold transition-all"><i class="fa-solid fa-rotate-right mr-2"></i> Refresh Status</button>
+        </div>
+        
+        <button onclick="logout()" class="mt-8 text-sm text-gray-400 hover:text-gray-600 font-medium">Keluar dari akun ini</button>
+    </div>
+
+    <!-- === PAYMENT SECTION === -->
+    <section id="payment-section" class="bg-slate-100 pt-24 pb-16 min-h-screen hidden absolute inset-0 z-[60] overflow-y-auto">
+        <div class="container mx-auto max-w-lg px-4">
+            <button onclick="hidePaymentSection()" class="mb-6 text-sm font-bold text-slate-500 hover:text-slate-800 bg-white px-4 py-2 rounded-lg shadow-sm border border-slate-200 transition-all"><i class="fa-solid fa-arrow-left mr-2"></i> Kembali</button>
+            
+            <div class="bg-white rounded-3xl shadow-xl p-6 md:p-8 text-slate-800 border border-slate-100">
+                <div class="text-center mb-6">
+                    <h1 class="text-2xl md:text-3xl font-bold mb-2 text-slate-900">Pembayaran Suka"</h1>
+                    <p class="text-slate-500 text-sm">Pilih salah satu metode pembayaran di bawah ini:</p>
+                </div>
+                
+                <!-- Tab Buttons -->
+                <div class="mb-8">
+                    <div class="flex overflow-x-auto no-scrollbar space-x-2 pb-2">
+                        <button onclick="switchPayTab('bank')" id="tab-bank" class="flex-shrink-0 px-5 py-2.5 rounded-full font-bold text-sm bg-teal-600 text-white shadow-md transform scale-105 transition-all">Transfer Bank</button>
+                        <button onclick="switchPayTab('gopay')" id="tab-gopay" class="flex-shrink-0 px-5 py-2.5 rounded-full font-bold text-sm bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all">Gopay / DANA</button>
+                        <button onclick="switchPayTab('qris')" id="tab-qris" class="flex-shrink-0 px-5 py-2.5 rounded-full font-bold text-sm bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all">QRIS</button>
+                    </div>
+                </div>
+
+                <!-- Tab Contents -->
+                <div id="content-bank" class="block animate-fade-in">
+                    <h2 class="text-lg font-bold mb-3 text-slate-800">Pilih Rekening Tujuan:</h2>
+                    <div class="bg-teal-50/50 p-5 rounded-xl border border-teal-100 shadow-sm">
+                        <p class="text-sm text-slate-700 mb-1"><span class="font-semibold">Bank Tujuan:</span> Bank Jago</p>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white p-3 rounded-lg border border-teal-200 mt-2 gap-3 shadow-sm">
+                            <span class="font-mono text-xl font-bold text-teal-700 select-all">502142812682</span>
+                            <button onclick="copyRek('502142812682', this)" class="bg-teal-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-teal-700 transition-all"><i class="fa-regular fa-copy mr-1"></i> Salin</button>
+                        </div>
+                        <p class="text-sm text-slate-700 mt-4"><span class="font-semibold">Atas Nama:</span> M. Fahrul Alam</p>
+                    </div>
+                </div>
+
+                <div id="content-gopay" class="hidden animate-fade-in">
+                    <h2 class="text-lg font-bold mb-3 text-slate-800">Pembayaran E-Wallet:</h2>
+                    <div class="bg-blue-50/50 p-5 rounded-xl border border-blue-100 shadow-sm">
+                        <p class="text-sm text-slate-700 mb-1"><span class="font-semibold">Gopay / DANA / OVO:</span></p>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white p-3 rounded-lg border border-blue-200 mt-2 gap-3 shadow-sm">
+                            <span class="font-mono text-xl font-bold text-blue-700 select-all">081230272157</span>
+                            <button onclick="copyRek('081230272157', this, 'bg-blue-600')" class="bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-all"><i class="fa-regular fa-copy mr-1"></i> Salin</button>
+                        </div>
+                        <p class="text-sm text-slate-700 mt-4"><span class="font-semibold">Atas Nama:</span> M. Fahrul Alam</p>
+                    </div>
+                </div>
+
+                <div id="content-qris" class="hidden animate-fade-in">
+                    <h2 class="text-lg font-bold mb-3 text-slate-800">Scan QRIS Universal:</h2>
+                    <div class="bg-red-50/50 p-6 rounded-xl border border-red-100 text-center shadow-sm">
+                        <img src="https://cdn.laju.dev/slugpost//assets/019e0ac4-2870-7d78-b94a-22e90f0aae9c.webp" alt="QRIS Pembayaran" class="mx-auto rounded-xl w-64 h-auto shadow-md border border-white">
+                        <p class="mt-4 font-bold text-slate-800">Mendukung Semua Pembayaran</p>
+                        <p class="text-sm text-slate-500">Scan via BCA, Mandiri, OVO, ShopeePay, dll.</p>
+                    </div>
+                </div>
+
+                <hr class="border-slate-100 my-6">
+
+                <!-- WA Button Konfirmasi -->
+                <div>
+                    <h2 class="text-lg font-bold mb-3 text-slate-800">Langkah Terakhir:</h2>
+                    <div class="bg-amber-50 p-5 rounded-xl border border-amber-200 shadow-sm">
+                        <h3 class="font-bold flex items-center text-amber-800 mb-2">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i> Konfirmasi ke Admin
+                        </h3>
+                        <p class="text-amber-700 text-sm mb-4">Setelah transfer, klik tombol di bawah untuk konfirmasi via WhatsApp dan mengirim bukti transfer agar akses segera diaktifkan.</p>
+                        <button onclick="confirmToWA()" class="w-full bg-[#25D366] text-white font-bold py-3.5 px-4 rounded-xl hover:bg-[#128C7E] shadow-md transition-all flex items-center justify-center text-lg hover:-translate-y-0.5">
+                            <i class="fa-brands fa-whatsapp text-2xl mr-2"></i> Konfirmasi via WhatsApp
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- === MAIN APP: GENERATOR FULL UI === -->
+    <main id="app-generator" class="pt-28 pb-20 hidden overflow-y-auto h-screen">
+        <section id="generator" class="relative">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Konfigurasi <span class="text-brand-600">Prompt</span></h2>
+                    <p class="text-gray-600 max-w-2xl mx-auto">Sesuaikan parameter di bawah ini. Teks prompt akan otomatis dirakit menggunakan struktur bahasa yang paling dipahami oleh model Video AI generasi terbaru.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+                    
+                    <!-- Left Column: Form Settings -->
+                    <div class="lg:col-span-7 space-y-6">
+                        
+                        <!-- Box 1: Dasar Adegan -->
+                        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100">
+                            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+                                <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600"><i class="fa-solid fa-clapperboard"></i></div>
+                                <h3 class="text-xl font-semibold text-gray-800">Dasar Adegan</h3>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Durasi</label><input type="text" id="durasi" value="10 detik" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all outline-none"></div>
+                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Genre</label><input type="text" id="genre" value="Cinematic sci-fi" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all outline-none"></div>
+                            </div>
+                            <div class="mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">Subjek Utama</label><input type="text" id="subjek" value="seorang astronot wanita" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">Tindakan (Action)</label><textarea id="tindakan" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none resize-none">berjalan perlahan melintasi lanskap gurun alien yang berbatu</textarea></div>
+                        </div>
+
+                        <!-- Box 2: Kamera & Mood -->
+                        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100">
+                            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+                                <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600"><i class="fa-solid fa-camera"></i></div>
+                                <h3 class="text-xl font-semibold text-gray-800">Kamera & Suasana</h3>
+                            </div>
+                            <div class="mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">Suasana Hati (Mood)</label><input type="text" id="suasana" value="Misterius, megah, dan tegang" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none"></div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Lensa</label><input type="text" id="lensa" value="Lensa Anamorphic 35mm" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none"></div>
+                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Gerakan Kamera</label><input type="text" id="gerakkamera" value="Slow pan dari kanan ke kiri" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none"></div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Rasio Aspek</label>
+                                    <select id="ar" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none bg-white">
+                                        <option value="16:9">16:9 (Landscape Cinematic)</option>
+                                        <option value="9:16">9:16 (Vertical/Shorts)</option>
+                                        <option value="1:1">1:1 (Square)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Pembingkaian</label>
+                                    <select id="bingkai" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none bg-white">
+                                        <option value="Wide shot">Wide shot</option>
+                                        <option value="Medium shot">Medium shot</option>
+                                        <option value="Close-up">Close-up</option>
+                                        <option value="Drone shot">Drone / Aerial shot</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Box 3: Pencahayaan & Warna -->
+                        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100">
+                            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+                                <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600"><i class="fa-solid fa-lightbulb"></i></div>
+                                <h3 class="text-xl font-semibold text-gray-800">Pencahayaan & Warna</h3>
+                            </div>
+                            <div class="mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">Pencahayaan</label><input type="text" id="cahaya" value="Pencahayaan dramatis bernuansa neon" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none"></div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Waktu / Cuaca</label><input type="text" id="waktu" value="Senja (Golden hour)" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none"></div>
+                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Palet Warna</label><input type="text" id="warna" value="Teal dan orange kontras tinggi" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none"></div>
+                            </div>
+                        </div>
+
+                        <!-- Box 4: Fisika & Audio -->
+                        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100">
+                            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+                                <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600"><i class="fa-solid fa-compact-disc"></i></div>
+                                <h3 class="text-xl font-semibold text-gray-800">Dinamika & Audio</h3>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Kecepatan Gerak</label><input type="text" id="cepatgerak" value="Slow motion halus" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none"></div>
+                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Fisika / Partikel</label><input type="text" id="fisika" value="Debu berterbangan dengan gravitasi rendah" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none"></div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Audio</label><input type="text" id="audio" value="Suara angin kencang dan musik synth" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none"></div>
+                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Kecepatan Edit</label><input type="text" id="cepatedit" value="Pacing lambat" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none"></div>
+                            </div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">Transisi</label><input type="text" id="transisi" value="Fade to black secara perlahan di detik terakhir" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none"></div>
+                        </div>
+
+                        <!-- Box 5: Batasan -->
+                        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100">
+                            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+                                <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500"><i class="fa-solid fa-shield-halved"></i></div>
+                                <h3 class="text-xl font-semibold text-gray-800">Batasan (Negative Constraints)</h3>
+                            </div>
+                            <div class="mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">Hindari</label><input type="text" id="hindari" value="Elemen kartun, distorsi wajah, CGI buruk" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-red-500 transition-all outline-none"></div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Kepatuhan Gaya</label><input type="text" id="gaya" value="Photorealistic 8k, hyper-detailed" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none"></div>
+                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Kontinuitas</label><input type="text" id="kontinuitas" value="Pencahayaan konsisten sepanjang adegan" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-500 transition-all outline-none"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Output / Result Panel (Sticky) -->
+                    <div class="lg:col-span-5 relative">
+                        <div class="sticky top-24 bg-gray-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-gray-800">
+                            <!-- Output Header -->
+                            <div class="bg-gray-800 px-6 py-4 flex justify-between items-center border-b border-gray-700">
+                                <div class="flex items-center gap-2 text-white">
+                                    <i class="fa-solid fa-terminal text-brand-400"></i>
+                                    <h3 class="font-semibold tracking-wide">Output Prompt</h3>
+                                </div>
+                                <button id="btn-copy" class="text-sm bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-lg transition-all duration-300 font-medium flex items-center gap-2 shadow-lg shadow-brand-500/30">
+                                    <i class="fa-regular fa-copy"></i> Salin Teks
+                                </button>
+                            </div>
+                            <!-- Textarea Display -->
+                            <div class="p-6 flex-grow">
+                                <textarea id="final-prompt" readonly class="w-full h-[450px] bg-gray-900 text-emerald-400 font-mono text-sm leading-relaxed outline-none resize-none custom-scrollbar p-2 rounded-lg border border-transparent focus:border-brand-500/50 transition-colors"></textarea>
+                            </div>
+                            <!-- Tips Footer -->
+                            <div class="bg-brand-900/50 px-6 py-4 border-t border-brand-500/20">
+                                <p class="text-brand-200 text-sm flex items-start gap-2">
+                                    <i class="fa-solid fa-lightbulb text-yellow-400 mt-1"></i>
+                                    <span><strong>Tips Pro:</strong> Gunakan bahasa Inggris (terjemahkan prompt ini) untuk hasil yang lebih akurat pada model AI global.</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- === LOGIC JAVASCRIPT === -->
+    <script>
+        // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+        const APPS_SCRIPT_URL = 'MASUKKAN_URL_WEB_APP_APPS_SCRIPT_DISINI'; 
+
+        // Elements Membership
+        const authModal = document.getElementById('auth-modal');
+        const mainBody = document.getElementById('main-body');
+        const appGenerator = document.getElementById('app-generator');
+        const userInfo = document.getElementById('user-info');
+        const pendingNotice = document.getElementById('pending-notice');
+        const paymentSection = document.getElementById('payment-section');
+
+        // Check Login Status on Load
+        window.onload = () => {
+            const currentUser = localStorage.getItem('premium_user');
+            if (currentUser) {
+                checkStatus(currentUser); 
+            } else {
+                showModal();
+            }
+        };
+
+        // Modal Controls
+        function showModal() { authModal.classList.remove('hidden'); mainBody.classList.add('overflow-hidden'); }
+        function hideModal() { authModal.classList.add('hidden'); mainBody.classList.remove('overflow-hidden'); }
+        function switchModal(id) {
+            document.getElementById('form-login').classList.add('hidden');
+            document.getElementById('form-register').classList.add('hidden');
+            document.getElementById('form-renew').classList.add('hidden');
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function showPaymentSection() { paymentSection.classList.remove('hidden'); pendingNotice.classList.add('hidden'); }
+        function hidePaymentSection() { paymentSection.classList.add('hidden'); pendingNotice.classList.remove('hidden'); }
+
+        // Payment UI Control
+        function switchPayTab(type) {
+            const tabs = ['bank', 'gopay', 'qris'];
+            tabs.forEach(t => {
+                const tabEl = document.getElementById(`tab-${t}`);
+                const contentEl = document.getElementById(`content-${t}`);
+                if (t === type) {
+                    tabEl.className = 'flex-shrink-0 px-5 py-2.5 rounded-full font-bold text-sm bg-teal-600 text-white shadow-md transform scale-105 transition-all';
+                    contentEl.classList.remove('hidden');
+                } else {
+                    tabEl.className = 'flex-shrink-0 px-5 py-2.5 rounded-full font-bold text-sm bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all';
+                    contentEl.classList.add('hidden');
+                }
+            });
+        }
+
+        // Copy Text for Rekening
+        function copyRek(text, btn, bgClass = 'bg-teal-600') {
+            navigator.clipboard.writeText(text).then(() => {
+                const oriText = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Disalin';
+                btn.classList.replace(bgClass, 'bg-emerald-500');
+                setTimeout(() => {
+                    btn.innerHTML = oriText;
+                    btn.classList.replace('bg-emerald-500', bgClass);
+                }, 2000);
+            });
+        }
+
+        // WhatsApp Confirmation
+        function confirmToWA() {
+            const username = localStorage.getItem('premium_user') || document.getElementById('reg-username').value;
+            const text = encodeURIComponent(`Halo Admin, saya ingin konfirmasi pembayaran akses Prompt Generator.\nUsername: *${username}*\n\nMohon segera diaktifkan. Berikut bukti transfernya: (Lampirkan foto di sini)`);
+            window.open(`https://wa.me/6281230272157?text=${text}`, '_blank');
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('premium_user');
+            location.reload();
+        }
+
+        // API: LOGIN
+        async function handleLogin() {
+            const username = document.getElementById('login-username').value;
+            if(!username) return alert('Masukkan username!');
+            
+            const btn = document.getElementById('btn-login');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memeriksa...';
+            
+            try {
+                const res = await fetch(`${APPS_SCRIPT_URL}?username=${username}`);
+                const data = await res.json();
+                
+                if(data.status === 'success') {
+                    localStorage.setItem('premium_user', data.username);
+                    handleRouting(data);
+                } else {
+                    alert('Username tidak ditemukan!');
+                }
+            } catch (err) {
+                alert('Gagal terhubung ke server.');
+            }
+            btn.innerHTML = 'Masuk Sekarang';
+        }
+
+        // API: CHECK STATUS
+        async function checkStatus(username = localStorage.getItem('premium_user')) {
+            try {
+                const res = await fetch(`${APPS_SCRIPT_URL}?username=${username}`);
+                const data = await res.json();
+                if(data.status === 'success') {
+                    handleRouting(data);
+                } else {
+                    logout(); 
+                }
+            } catch (err) {
+                console.log("Offline mode / Network error");
+            }
+        }
+
+        // API: ROUTING (Control tampilan berdasarkan akun)
+        function handleRouting(data) {
+            hideModal();
+            pendingNotice.classList.add('hidden');
+            appGenerator.classList.add('hidden');
+            paymentSection.classList.add('hidden');
+
+            if(data.accountStatus === 'pending') {
+                pendingNotice.classList.remove('hidden');
+            } 
+            else if(data.accountStatus === 'expired') {
+                showModal();
+                switchModal('form-renew');
+                document.getElementById('renew-username').value = data.username;
+            } 
+            else if(data.accountStatus === 'active') {
+                appGenerator.classList.remove('hidden');
+                userInfo.classList.remove('hidden');
+                document.getElementById('nav-nama-user').innerText = `Halo, ${data.nama}`;
+                document.getElementById('nav-expired').innerText = `Aktif s/d: ${data.expiredDate}`;
+                mainBody.classList.remove('overflow-hidden'); // Allow scroll on generator
+            }
+        }
+
+        // API: REGISTER
+        async function handleRegister() {
+            const payload = {
+                action: 'register',
+                nama: document.getElementById('reg-nama').value,
+                username: document.getElementById('reg-username').value,
+                wa: document.getElementById('reg-wa').value,
+                paket: document.getElementById('reg-paket').value
+            };
+
+            if(!payload.nama || !payload.username || !payload.wa) return alert('Lengkapi semua data!');
+
+            const btn = document.getElementById('btn-register');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
+
+            try {
+                const res = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                
+                if(data.status === 'success') {
+                    localStorage.setItem('premium_user', payload.username);
+                    hideModal();
+                    showPaymentSection();
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                alert('Pendaftaran gagal. Pastikan URL Apps Script Benar.');
+            }
+            btn.innerHTML = 'Lanjut ke Pembayaran';
+        }
+
+        // API: RENEW
+        async function handleRenew() {
+            const payload = {
+                action: 'renew',
+                username: document.getElementById('renew-username').value,
+                paket: document.getElementById('renew-paket').value
+            };
+
+            const btn = document.getElementById('btn-renew');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
+
+            try {
+                const res = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if(data.status === 'success') {
+                    hideModal();
+                    showPaymentSection();
+                }
+            } catch (err) {
+                alert('Gagal memproses.');
+            }
+            btn.innerHTML = 'Perpanjang Sekarang';
+        }
+
+        // ==========================================
+        // === SCRIPT GENERATOR (LIVE UPDATE) ===
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputs = {
+                durasi: document.getElementById('durasi'),
+                genre: document.getElementById('genre'),
+                subjek: document.getElementById('subjek'),
+                tindakan: document.getElementById('tindakan'),
+                suasana: document.getElementById('suasana'),
+                ar: document.getElementById('ar'),
+                bingkai: document.getElementById('bingkai'),
+                lensa: document.getElementById('lensa'),
+                gerakkamera: document.getElementById('gerakkamera'),
+                cahaya: document.getElementById('cahaya'),
+                waktu: document.getElementById('waktu'),
+                warna: document.getElementById('warna'),
+                cepatgerak: document.getElementById('cepatgerak'),
+                fisika: document.getElementById('fisika'),
+                audio: document.getElementById('audio'),
+                cepatedit: document.getElementById('cepatedit'),
+                transisi: document.getElementById('transisi'),
+                hindari: document.getElementById('hindari'),
+                gaya: document.getElementById('gaya'),
+                kontinuitas: document.getElementById('kontinuitas')
+            };
+
+            const outputTextarea = document.getElementById('final-prompt');
+            const copyBtn = document.getElementById('btn-copy');
+
+            function generatePrompt() {
+                const val = (key) => {
+                    let value = inputs[key].value.trim();
+                    return value ? value : `[${key}]`;
+                };
+
+                const promptText = `Buat adegan ${val('durasi')} ${val('genre')}: ${val('subjek')} ${val('tindakan')}.\n\nNada: ${val('suasana')}.\nKamera: ${val('lensa')}, ${val('bingkai')}, ${val('gerakkamera')}.\nRasio aspek: ${val('ar')}.\nPencahayaan: ${val('cahaya')}, ${val('waktu')}, warna: ${val('warna')}.\nGerakan: ${val('cepatgerak')}, ${val('fisika')}, ${val('transisi')}.\nAudio: ${val('audio')}.\nKecepatan: ${val('cepatedit')}.\n\nBatasan: Hindari ${val('hindari')}, kepatuhan gaya ${val('gaya')}, ${val('kontinuitas')}.`;
+
+                outputTextarea.value = promptText;
+            }
+
+            // Live Updates
+            Object.values(inputs).forEach(input => {
+                const eventType = input.tagName === 'SELECT' ? 'change' : 'input';
+                input.addEventListener(eventType, generatePrompt);
+            });
+
+            // Copy Feature Generator
+            copyBtn.addEventListener('click', () => {
+                outputTextarea.select();
+                navigator.clipboard.writeText(outputTextarea.value).then(() => {
+                    const originalHtml = copyBtn.innerHTML;
+                    const originalClasses = copyBtn.className;
+                    
+                    // Style sukses
+                    copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Tersalin!';
+                    copyBtn.classList.replace('bg-brand-600', 'bg-emerald-500');
+                    copyBtn.classList.replace('hover:bg-brand-500', 'hover:bg-emerald-400');
+                    copyBtn.classList.replace('shadow-brand-500/30', 'shadow-emerald-500/30');
+
+                    // Reset style setelah 2 detik
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalHtml;
+                        copyBtn.className = originalClasses;
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Gagal menyalin:', err);
+                    alert('Gagal menyalin teks. Silakan salin manual.');
+                });
+            });
+
+            // Generate otomatis saat pertama kali dimuat
+            generatePrompt();
+        });
+    </script>
+</body>
+</html>
