@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Prompt Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Poppins', sans-serif; background-color: #f3f4f6; }</style>
+</head>
+<body class="text-gray-800">
+
+    <!-- === LOCK SCREEN === -->
+    <div id="lock-screen" class="fixed inset-0 bg-gray-900 z-[100] flex items-center justify-center">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
+            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-user-shield"></i></div>
+            <h2 class="text-2xl font-bold mb-4">Admin Area</h2>
+            <input type="password" id="admin-pin" placeholder="Masukkan PIN Admin" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-center tracking-widest text-lg mb-4">
+            <button onclick="checkPin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg">Buka Dashboard</button>
+            <p class="text-xs text-gray-400 mt-4">PIN Default: 123456</p>
+        </div>
+    </div>
+
+    <!-- === DASHBOARD MAIN === -->
+    <div id="dashboard" class="hidden min-h-screen flex flex-col">
+        <!-- Navbar -->
+        <nav class="bg-gray-900 text-white px-6 py-4 shadow-md flex justify-between items-center sticky top-0 z-40">
+            <div class="font-bold text-xl flex items-center gap-2"><i class="fa-solid fa-server text-blue-400"></i> Server Admin</div>
+            <div class="flex gap-3">
+                <button onclick="loadData()" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-md"><i class="fa-solid fa-rotate-right md:mr-1"></i> <span class="hidden md:inline">Refresh</span></button>
+                <button onclick="location.reload()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-md"><i class="fa-solid fa-power-off"></i></button>
+            </div>
+        </nav>
+
+        <div class="flex-grow p-4 md:p-6 max-w-7xl mx-auto w-full">
+            
+            <!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                    <p class="text-gray-500 text-xs md:text-sm font-semibold">Total User</p>
+                    <h3 class="text-2xl md:text-3xl font-bold text-gray-900" id="stat-total">0</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                    <p class="text-emerald-500 text-xs md:text-sm font-semibold">User Aktif</p>
+                    <h3 class="text-2xl md:text-3xl font-bold text-emerald-600" id="stat-active">0</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                    <p class="text-amber-500 text-xs md:text-sm font-semibold">Pending</p>
+                    <h3 class="text-2xl md:text-3xl font-bold text-amber-600" id="stat-pending">0</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                    <p class="text-purple-500 text-xs md:text-sm font-semibold">Kupon Aktif</p>
+                    <h3 class="text-2xl md:text-3xl font-bold text-purple-600" id="stat-kupon">0</h3>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex gap-2 mb-6 border-b border-gray-300 pb-2 overflow-x-auto no-scrollbar">
+                <button onclick="switchTab('users')" id="tab-users" class="whitespace-nowrap px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow-md transition-all">Database Users</button>
+                <button onclick="switchTab('kupon')" id="tab-kupon" class="whitespace-nowrap px-6 py-2 bg-gray-200 text-gray-600 rounded-lg font-semibold hover:bg-gray-300 transition-all">Data Kupon (Affiliate)</button>
+            </div>
+
+            <!-- TAB 1: USERS -->
+            <div id="content-users" class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-gray-100 text-gray-600 font-semibold border-b">
+                            <tr>
+                                <th class="px-6 py-4">Waktu Daftar</th>
+                                <th class="px-6 py-4">Nama & WA</th>
+                                <th class="px-6 py-4">Username</th>
+                                <th class="px-6 py-4">Paket & Harga</th>
+                                <th class="px-6 py-4">Status & Expired</th>
+                                <th class="px-6 py-4 text-center">Aksi (Edit / Follow Up)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-users" class="divide-y divide-gray-100">
+                            <tr><td colspan="6" class="text-center py-8 text-gray-500"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Memuat Data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 2: KUPON -->
+            <div id="content-kupon" class="hidden">
+                <div class="mb-4 flex justify-end">
+                    <button onclick="openModalKupon()" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-md transition-all"><i class="fa-solid fa-plus mr-1"></i> Tambah Kupon</button>
+                </div>
+                <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-purple-50 text-purple-800 font-semibold border-b border-purple-100">
+                                <tr>
+                                    <th class="px-6 py-4">Pemilik (Username)</th>
+                                    <th class="px-6 py-4">Kode Kupon</th>
+                                    <th class="px-6 py-4">Diskon (%)</th>
+                                    <th class="px-6 py-4">Expired Date</th>
+                                    <th class="px-6 py-4 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-kupon" class="divide-y divide-gray-100">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- === MODAL EDIT USER === -->
+    <div id="modal-user" class="fixed inset-0 bg-gray-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 md:p-8 rounded-3xl w-full max-w-md shadow-2xl transform transition-all">
+            <h3 class="text-xl font-bold mb-4">Edit Akses User</h3>
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-600">Username</label>
+                <input type="text" id="edit-username" readonly class="w-full px-4 py-3 mt-1 border border-gray-200 rounded-xl bg-gray-100 text-gray-500 font-mono outline-none">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-600">Status Akses</label>
+                <select id="edit-status" class="w-full px-4 py-3 mt-1 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="pending">Pending (Menunggu Bayar)</option>
+                    <option value="active">Active (Aktif)</option>
+                    <option value="expired">Expired (Habis)</option>
+                </select>
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-600">Expired Date (Tgl Habis)</label>
+                <input type="date" id="edit-expdate" class="w-full px-4 py-3 mt-1 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeModal('modal-user')" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 rounded-xl font-bold transition-all border border-gray-200">Batal</button>
+                <button onclick="saveUser()" id="btn-save-user" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition-all shadow-md">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- === MODAL TAMBAH KUPON === -->
+    <div id="modal-kupon" class="fixed inset-0 bg-gray-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 md:p-8 rounded-3xl w-full max-w-md shadow-2xl">
+            <h3 class="text-xl font-bold mb-4">Tambah Kupon Diskon</h3>
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-600">Username Affiliate</label>
+                <input type="text" id="add-owner" placeholder="Contoh: budi123" class="w-full px-4 py-3 mt-1 border rounded-xl focus:ring-2 focus:ring-purple-500 outline-none">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-600">Kode Kupon</label>
+                <input type="text" id="add-kode" placeholder="Contoh: PROMOBUDI" class="w-full px-4 py-3 mt-1 border rounded-xl focus:ring-2 focus:ring-purple-500 outline-none uppercase font-mono">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-600">Diskon (%)</label>
+                <input type="number" id="add-diskon" placeholder="Contoh: 20" class="w-full px-4 py-3 mt-1 border rounded-xl focus:ring-2 focus:ring-purple-500 outline-none">
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-600">Berlaku Sampai (Opsional)</label>
+                <input type="date" id="add-expdate" class="w-full px-4 py-3 mt-1 border rounded-xl focus:ring-2 focus:ring-purple-500 outline-none">
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeModal('modal-kupon')" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 rounded-xl font-bold border border-gray-200">Batal</button>
+                <button onclick="saveKupon()" id="btn-save-kupon" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold transition-all shadow-md">Simpan Kupon</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- === MODAL EDIT KUPON === -->
+    <div id="modal-edit-kupon" class="fixed inset-0 bg-gray-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 md:p-8 rounded-3xl w-full max-w-md shadow-2xl">
+            <h3 class="text-xl font-bold mb-4">Edit Kupon</h3>
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-600">Kode Kupon</label>
+                <input type="text" id="edit-kupon-kode" readonly class="w-full px-4 py-3 mt-1 border border-gray-200 rounded-xl bg-gray-100 text-gray-500 font-mono outline-none">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-600">Diskon (%)</label>
+                <input type="number" id="edit-kupon-diskon" class="w-full px-4 py-3 mt-1 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none">
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-600">Berlaku Sampai</label>
+                <input type="date" id="edit-kupon-expdate" class="w-full px-4 py-3 mt-1 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none">
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeModal('modal-edit-kupon')" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 rounded-xl font-bold border border-gray-200">Batal</button>
+                <button onclick="updateKupon()" id="btn-update-kupon" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold transition-all shadow-md">Update</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- === SCRIPT LOGIC === -->
+    <script>
+        // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+        const APPS_SCRIPT_URL = 'MASUKKAN_URL_WEB_APP_APPS_SCRIPT_DISINI'; 
+
+        // Fungsi Lock Screen
+        function checkPin() {
+            if(document.getElementById('admin-pin').value === '123456') { // PIN ADMIN
+                document.getElementById('lock-screen').style.display = 'none';
+                document.getElementById('dashboard').classList.remove('hidden');
+                loadData();
+            } else { alert('PIN Salah!'); }
+        }
+
+        // Fungsi Switch Tab
+        function switchTab(tab) {
+            document.getElementById('content-users').style.display = tab === 'users' ? 'block' : 'none';
+            document.getElementById('content-kupon').style.display = tab === 'kupon' ? 'block' : 'none';
+            
+            document.getElementById('tab-users').className = tab === 'users' ? 'whitespace-nowrap px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow-md transition-all' : 'whitespace-nowrap px-6 py-2 bg-gray-200 text-gray-600 rounded-lg font-semibold hover:bg-gray-300 transition-all';
+            document.getElementById('tab-kupon').className = tab === 'kupon' ? 'whitespace-nowrap px-6 py-2 bg-purple-600 text-white rounded-lg font-semibold shadow-md transition-all' : 'whitespace-nowrap px-6 py-2 bg-gray-200 text-gray-600 rounded-lg font-semibold hover:bg-gray-300 transition-all';
+        }
+
+        // Format Uang Rupiah & Hitung Sisa Hari
+        const formatRp = (angka) => 'Rp ' + Number(angka).toLocaleString('id-ID');
+        
+        function getDaysLeftInfo(expDateStr) {
+            if(!expDateStr) return '';
+            const expDate = new Date(expDateStr);
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            
+            const diffTime = expDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if(diffDays > 0) return `<span class="text-blue-600 font-bold ml-1">(${diffDays} hari lagi)</span>`;
+            else if(diffDays === 0) return `<span class="text-amber-500 font-bold ml-1">(Hari ini)</span>`;
+            else return `<span class="text-red-600 font-bold ml-1">(Lewat ${Math.abs(diffDays)} hari)</span>`;
+        }
+
+        // Modal Controls
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function openModalKupon() { document.getElementById('modal-kupon').style.display = 'flex'; }
+        
+        function openEditUser(username, status, expDate) {
+            document.getElementById('edit-username').value = username;
+            document.getElementById('edit-status').value = status;
+            document.getElementById('edit-expdate').value = expDate; // Format YYYY-MM-DD
+            document.getElementById('modal-user').style.display = 'flex';
+        }
+
+        function openEditKupon(kuponKode, diskon, expDate) {
+            document.getElementById('edit-kupon-kode').value = kuponKode;
+            document.getElementById('edit-kupon-diskon').value = diskon;
+            document.getElementById('edit-kupon-expdate').value = expDate;
+            document.getElementById('modal-edit-kupon').style.display = 'flex';
+        }
+
+        // WA Follow Up
+        function openWA(nama, wa, status) {
+            let msg = '';
+            if(status === 'pending') {
+                msg = encodeURIComponent(`Halo Kak ${nama},\nKami melihat pesanan akses Prompt Generator kakak masih tertunda. Apakah ada kendala saat melakukan pembayaran? Jika ada pertanyaan, silakan balas pesan ini ya kak. Terima kasih!`);
+            } else if (status === 'expired') {
+                msg = encodeURIComponent(`Halo Kak ${nama},\nMasa aktif akses Prompt Generator kakak sudah habis nih. Yuk perpanjang sekarang agar bisa terus buat video AI keren!`);
+            } else {
+                msg = encodeURIComponent(`Halo Kak ${nama},\nTerima kasih sudah menggunakan Prompt Generator kami! Bagaimana pengalamannya sejauh ini?`);
+            }
+            
+            // Format number: ubah 08 jadi 628
+            let cleanWa = wa.toString().replace(/\D/g, '');
+            if(cleanWa.startsWith('0')) cleanWa = '62' + cleanWa.substring(1);
+            
+            window.open(`https://wa.me/${cleanWa}?text=${msg}`, '_blank');
+        }
+
+        // ==========================
+        // FETCH DATA DARI SPREADSHEET
+        // ==========================
+        async function loadData() {
+            document.getElementById('table-users').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Memuat Data...</td></tr>';
+            try {
+                const res = await fetch(`${APPS_SCRIPT_URL}?action=get_all_admin`);
+                const data = await res.json();
+                
+                if(data.status === 'success') {
+                    renderUsers(data.users);
+                    renderCoupons(data.coupons);
+                }
+            } catch (err) {
+                alert('Gagal mengambil data dari server. Pastikan URL Apps Script benar.');
+            }
+        }
+
+        function renderUsers(users) {
+            let html = '';
+            let active = 0, pending = 0;
+
+            users.reverse().forEach(u => {
+                if(u.status === 'active') active++;
+                if(u.status === 'pending') pending++;
+
+                let badgeColor = u.status === 'active' ? 'bg-emerald-100 text-emerald-700' : (u.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700');
+                let kuponHtml = u.kupon ? `<br><span class="text-[10px] md:text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded mt-1 inline-block"><i class="fa-solid fa-ticket"></i> ${u.kupon}</span>` : '';
+                
+                let sisaHariInfo = (u.status === 'active' || u.status === 'expired') ? getDaysLeftInfo(u.expDate) : '';
+
+                html += `
+                <tr class="hover:bg-gray-50 border-b border-gray-100 transition-colors">
+                    <td class="px-6 py-4 text-xs md:text-sm">${u.tanggal}</td>
+                    <td class="px-6 py-4">
+                        <p class="font-bold text-gray-800">${u.nama}</p>
+                        <p class="text-xs text-gray-500 mt-0.5"><i class="fa-brands fa-whatsapp text-green-500"></i> ${u.wa}</p>
+                    </td>
+                    <td class="px-6 py-4 font-mono text-blue-600 font-semibold">${u.username}</td>
+                    <td class="px-6 py-4">
+                        <p class="font-semibold text-gray-800">${u.paket}</p>
+                        <p class="text-xs font-bold text-gray-600">${formatRp(u.harga)}</p>
+                        ${kuponHtml}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${badgeColor}">${u.status}</span>
+                        <p class="text-xs text-gray-500 mt-2">Exp: ${u.expDate ? u.expDate.split('-').reverse().join('/') : '-'} ${sisaHariInfo}</p>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex items-center justify-center gap-2">
+                            <button onclick="openEditUser('${u.username}', '${u.status}', '${u.expDate}')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm"><i class="fa-solid fa-pen-to-square md:mr-1"></i> <span class="hidden md:inline">Edit</span></button>
+                            
+                            <button onclick="openWA('${u.nama}', '${u.wa}', '${u.status}')" class="bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white px-3 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm tooltip" title="Follow Up WhatsApp"><i class="fa-brands fa-whatsapp text-lg"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+
+            document.getElementById('table-users').innerHTML = html;
+            document.getElementById('stat-total').innerText = users.length;
+            document.getElementById('stat-active').innerText = active;
+            document.getElementById('stat-pending').innerText = pending;
+        }
+
+        function renderCoupons(coupons) {
+            let html = '';
+            coupons.forEach(c => {
+                let sisaHariInfo = getDaysLeftInfo(c.expDate);
+                html += `
+                <tr class="hover:bg-gray-50 border-b border-gray-100 transition-colors">
+                    <td class="px-6 py-4 font-bold text-gray-700">${c.owner}</td>
+                    <td class="px-6 py-4"><span class="bg-purple-50 border border-purple-200 px-3 py-1.5 rounded-lg text-purple-700 font-bold tracking-widest uppercase">${c.kupon}</span></td>
+                    <td class="px-6 py-4 font-extrabold text-emerald-600 text-lg">${c.diskon}%</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">
+                        ${c.expDate ? c.expDate.split('-').reverse().join('/') : 'Selamanya'} <br> ${sisaHariInfo}
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex items-center justify-center gap-2">
+                            <button onclick="openEditKupon('${c.kupon}', '${c.diskon}', '${c.expDate}')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="deleteKupon('${c.kupon}')" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            document.getElementById('table-kupon').innerHTML = html;
+            document.getElementById('stat-kupon').innerText = coupons.length;
+        }
+
+        // ==========================
+        // UPDATE & ADD KE DATABASE
+        // ==========================
+        async function saveUser() {
+            const btn = document.getElementById('btn-save-user');
+            const payload = {
+                action: 'admin_update_user',
+                username: document.getElementById('edit-username').value,
+                statusAccount: document.getElementById('edit-status').value,
+                expiredDate: document.getElementById('edit-expdate').value
+            };
+
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            try {
+                await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                closeModal('modal-user');
+                loadData(); // Refresh Data
+            } catch(e) { alert('Gagal Menyimpan'); }
+            btn.innerHTML = 'Simpan';
+        }
+
+        async function saveKupon() {
+            const btn = document.getElementById('btn-save-kupon');
+            const payload = {
+                action: 'admin_add_coupon',
+                owner: document.getElementById('add-owner').value,
+                kupon: document.getElementById('add-kode').value,
+                diskon: document.getElementById('add-diskon').value,
+                expDate: document.getElementById('add-expdate').value
+            };
+
+            if(!payload.owner || !payload.kupon || !payload.diskon) return alert("Isi Username, Kode, dan Diskon!");
+
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            try {
+                await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                closeModal('modal-kupon');
+                // Kosongkan form
+                document.getElementById('add-owner').value = '';
+                document.getElementById('add-kode').value = '';
+                document.getElementById('add-diskon').value = '';
+                document.getElementById('add-expdate').value = '';
+                loadData();
+            } catch(e) { alert('Gagal Menambah Kupon'); }
+            btn.innerHTML = 'Simpan Kupon';
+        }
+
+        async function updateKupon() {
+            const btn = document.getElementById('btn-update-kupon');
+            const payload = {
+                action: 'admin_update_coupon',
+                kupon: document.getElementById('edit-kupon-kode').value,
+                diskon: document.getElementById('edit-kupon-diskon').value,
+                expDate: document.getElementById('edit-kupon-expdate').value
+            };
+
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            try {
+                await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                closeModal('modal-edit-kupon');
+                loadData();
+            } catch(e) { alert('Gagal Mengupdate Kupon'); }
+            btn.innerHTML = 'Update';
+        }
+
+        async function deleteKupon(kuponKode) {
+            if(!confirm(`Yakin ingin menghapus kupon ${kuponKode}?`)) return;
+            try {
+                await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'admin_delete_coupon', kupon: kuponKode }) });
+                loadData();
+            } catch(e) { alert('Gagal menghapus kupon'); }
+        }
+    </script>
+</body>
+</html>
