@@ -18,7 +18,7 @@
             <h2 class="text-2xl font-bold mb-4">Admin Area</h2>
             <input type="password" id="admin-pin" placeholder="Masukkan PIN Admin" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-center tracking-widest text-lg mb-4">
             <button onclick="checkPin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg">Buka Dashboard</button>
-            <p class="text-xs text-gray-400 mt-4">PIN Default: 123456</p>
+           
         </div>
     </div>
 
@@ -188,11 +188,11 @@
     <!-- === SCRIPT LOGIC === -->
     <script>
         // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
-        const APPS_SCRIPT_URL = 'MASUKKAN_URL_WEB_APP_APPS_SCRIPT_DISINI'; 
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyLJGik0bcb-K2tv_O25vyR4PCqepUh7hJ2Dqh7vHjoMqEq9PxJNyEV7JI0e4AVf8FH/exec'; 
 
         // Fungsi Lock Screen
         function checkPin() {
-            if(document.getElementById('admin-pin').value === '123456') { // PIN ADMIN
+            if(document.getElementById('admin-pin').value === '1453') { // PIN ADMIN
                 document.getElementById('lock-screen').style.display = 'none';
                 document.getElementById('dashboard').classList.remove('hidden');
                 loadData();
